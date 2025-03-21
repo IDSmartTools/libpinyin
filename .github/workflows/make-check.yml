@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: C/C++ CI for Windows x64
 
 on:
   push:
@@ -9,22 +9,34 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
-
-    container:
-      image: fedora:rawhide
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v2
-    - name: install build dependency
-      run: sudo dnf install -y gcc-c++ libdb-devel glib2-devel make gnome-common wget
-    - name: autoconf
-      run: ./autogen.sh
-    - name: configure
-      run: ./configure --with-dbm=BerkeleyDB
-    - name: make
-      run: make V=1 VERBOSE=1
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
+    - name: Install dependencies
+      run: |
+        choco install make
+        choco install mingw
+        choco install wget
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        install: >-
+          mingw-w64-x86_64-toolchain
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-make
+          mingw-w64-x86_64-pkg-config
+        msystem: MINGW64
+    - name: Configure
+      run: |
+        ./configure --with-dbm=BerkeleyDB
+    - name: Build
+      run: |
+        make V=1 VERBOSE=1
+    - name: Run tests
+      run: |
+        make check
+    - name: Distcheck
+      run: |
+        make distcheck
